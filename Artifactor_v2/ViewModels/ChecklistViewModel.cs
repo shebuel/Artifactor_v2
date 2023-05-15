@@ -1,5 +1,6 @@
 ﻿using System.Reflection.Metadata.Ecma335;
 using Artifactor_v2.Core.Helpers;
+using Artifactor_v2.Helpers;
 using Artifactor_v2.Models;
 using CommunityToolkit.Mvvm.Collections;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -7,7 +8,11 @@ using CommunityToolkit.Mvvm.Input;
 using ExcelDataReader;
 using Microsoft.UI.Xaml;
 using Newtonsoft.Json;
-using Windows.ApplicationModel.Contacts;
+using Windows.ApplicationModel.DataTransfer;
+using Windows.Storage.Pickers;
+using Windows.Storage.Streams;
+using Windows.Storage;
+using Microsoft.UI.Xaml.Controls;
 
 namespace Artifactor_v2.ViewModels;
 
@@ -15,27 +20,47 @@ public partial class ChecklistViewModel : ObservableRecipient
 {
     public ChecklistViewModel()
     {
-    }
+        /*PasteCommand = new AsyncRelayCommand(Paste);*/
+    }        
 
     /// <summary>
     /// Gets the current collection of checks
     /// </summary>
-    public ObservableGroupedCollection<string, Check> Checks = new();
+    public ObservableGroupedCollection<string, ObservableCheck> ObservableChecks = new();
 
-    private List<Check> _checks;
+    private List<ObservableCheck>? _checks;
+    private ChecksQueryResponse? ChecksQuery;
+    private readonly ObservableCheck check1 = new()
+    {
+        TestId = "testID",
+        TestName = "testName",
+        TestDescription = "testDescription",
+        TestType = "testType",
+        CheckCompleted = true,
+        ProofFilePath = new List<string> { "filepath1", "filepath2" },
+        Tags = new List<string> { "tag1", "tag2" },
+        Status = "Pass"
+    };
+    private readonly ObservableCheck check2 = new()
+    {
+        TestId = "testID1",
+        TestName = "testName1",
+        TestDescription = "testDescription1",
+        TestType = "testType",
+        CheckCompleted = true,
+        ProofFilePath = new List<string> { "filepath1", "filepath2" },
+        Tags = new List<string> { "tag1", "tag2" },
+        Status = "Pass"
+    };
 
 
-    Check check1 = new("testID", "testName", "testDescription", "testType", false, new List<string> { "filepath1", "filepath2" }, new List<string> { "tag1", "tag2" }, "Pass");
-    Check check2 = new("testID1", "testName1", "testDescription1", "testType", false, new List<string> { "filepath1", "filepath2" }, new List<string> { "tag1", "tag3" }, "Fail");
-
-    ChecksQueryResponse ChecksQuery;
 
     /// <summary>
     /// Load the checks to dispaly
     /// </summary>
     /// 
     [RelayCommand(FlowExceptionsToTaskScheduler = true)]
-    private async Task LoadChecksAsync()
+    private Task LoadChecksAsync()
     {
         _checks = new()
         {
@@ -43,26 +68,30 @@ public partial class ChecklistViewModel : ObservableRecipient
             check2
         };
 
+        ExcelToJson();
         ChecksQuery = new(_checks);
 
-        Checks = new ObservableGroupedCollection<string, Check>(
+
+        ObservableChecks = new ObservableGroupedCollection<string, ObservableCheck>(
             ChecksQuery.Checks
             .GroupBy(static c=> c.TestType));
 
         //await LoadChecksAsync();
 
-        OnPropertyChanged(nameof(Checks));
+        OnPropertyChanged(nameof(ObservableChecks));
+        return Task.CompletedTask;
     }
 
     [RelayCommand]
-    private void MarkCheckCompleted(Check check)
+    private void MarkCheckCompleted(ObservableCheck ObservableCheck)
     {
-        Checks.FirstGroupByKey(char.ToUpperInvariant(check.TestId[0]).ToString()).Remove(check);
+        var _index = ObservableChecks.FirstGroupByKey(ObservableCheck.TestType.ToString()).IndexOf(ObservableCheck);
+        ObservableChecks.FirstGroupByKey(ObservableCheck.TestType.ToString()).ElementAt(_index).CheckCompleted = true;
+        OnPropertyChanged(nameof(ObservableChecks));
     }
 
-    /*private async Task ExcelToJson()
+    private void ExcelToJson()
     {
-        
         using var stream = File.Open("C:\\Users\\jsheb\\Downloads\\Deloitte_Allianz_IAPT_Checklist_v.1.2.xlsx", FileMode.Open, FileAccess.Read);
         //Had to include to stop the reader from breaking coz not supporting encoding
         System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
@@ -79,19 +108,28 @@ public partial class ChecklistViewModel : ObservableRecipient
             {
                 while (reader.Read())
                 {
-                    if (reader.GetString(0) != null)
+                    if (reader.GetString(0) != null && reader.GetString(0) != "TEST CASE ID")
                     {
-                        _checks.Add(item: new Check()
+                        try
                         {
-                            TestName = reader.GetString(1),
-                            TestDescription = reader.GetString(2),
-                            TestType = reader.GetString(3),
-                            CheckCompleted = false,
-                            ProofFilePath = new List<string>() { },
-                            Tags = new List<string>(reader.GetString(4).Split(',')),
-                            Status = "Pass",
-                            TestId = reader.GetString(0)
-                        });
+                            var _getCheck = new ObservableCheck()
+                            {
+                                TestId = reader.GetString(0),
+                                TestName = reader.GetString(1),
+                                TestDescription = reader.GetString(2) != null ? reader.GetString(2) : "",
+                                TestType = reader.GetString(3),
+                                CheckCompleted = false,
+                                ProofFilePath = new List<string>() { },
+                                Tags = new List<string>(reader.GetString(4).Split(',')),
+                                Status = "Pass"
+                            };
+                            _checks.Add(_getCheck);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex.ToString());
+                        }
+
                     }
 
                 }
@@ -115,6 +153,86 @@ public partial class ChecklistViewModel : ObservableRecipient
 
         //var jsonoutputFile = File.OpenWrite("C:\\Users\\jsheb\\Downloads\\jsonOutput.txt");
         File.WriteAllText(@"C:\Users\jsheb\Downloads\jsonOutput.txt", json);
+    }
+
+    /*public IAsyncRelayCommand PasteCommand
+    {
+    get; private set; }*/
+
+    /*private async Task Paste()
+    {
+        var _index = 0;
+        
+        if (checkPaste != null)
+        {
+            _index = ObservableChecks.FirstGroupByKey(checkPaste.TestType.ToString()).IndexOf(checkPaste);
+        }
+
+        var dataPackageView = Clipboard.GetContent();
+        if (dataPackageView != null && dataPackageView.Contains("Bitmap"))
+        {
+            IRandomAccessStreamReference? imageReceived = null;
+            imageReceived = await dataPackageView.GetBitmapAsync();
+            if (imageReceived != null)
+            {
+                using var imageStream = await imageReceived.OpenReadAsync();
+                *//*WriteableBitmap bitmapImage = new WriteableBitmap(500, 500);
+                await bitmapImage.SetSourceAsync(imageStream);
+
+                StorageFile outputFile = new StorageFile.GetFileFromPathAsync("C:\\Users\\jsheb\\Downloads");
+
+
+                FileStream imageFileStream = File.OpenWrite(OutputFolder + "\\" + checks[0].testID + "_001");
+                BitmapEncoder encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, imageFileStream);*//*
+
+                var fileCount = 1;
+
+
+                if (ObservableChecks.FirstGroupByKey(checkPaste.TestType.ToString()).ElementAt(_index).ProofFilePath != null)
+                    fileCount = ObservableChecks.FirstGroupByKey(checkPaste.TestType.ToString()).ElementAt(_index).ProofFilePath.Count + 1;
+
+
+
+
+                var fileSave = new FileSavePicker();
+                fileSave.FileTypeChoices.Add("Image", new string[] { ".png" });
+                fileSave.DefaultFileExtension = ".png";
+                fileSave.SuggestedFileName = ObservableChecks.FirstGroupByKey(checkPaste.TestType.ToString()).ElementAt(_index).TestId + "_" + fileCount.ToString();
+                fileSave.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+
+                // Retrieve the window handle (HWND) of the current WinUI 3 window. 
+                var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+
+                // Initialize the folder picker with the window handle (HWND).
+                WinRT.Interop.InitializeWithWindow.Initialize(fileSave, hWnd);
+
+                var storageFile = await fileSave.PickSaveFileAsync();
+
+                ObservableChecks.FirstGroupByKey(checkPaste.TestType.ToString()).ElementAt(_index).ProofFilePath.Add(storageFile.Path);
+
+                //consoleLog.Text = checksSanitized[_index].filePath[0];
+
+                //checksSanitized.GetEnumerator().MoveNext();
+                //TODO: Create a null exception
+
+                using var stream = await storageFile.OpenAsync(FileAccessMode.ReadWrite);
+                await imageStream.AsStreamForRead().CopyToAsync(stream.AsStreamForWrite());
+            }
+        }
+    }*/
+
+    [RelayCommand]
+    private void Complete()
+    {
+        /*var contentDialog = new ContentDialog
+        {
+            Title = "Finish",
+            Content = "Please fill in all the checks",
+            PrimaryButtonText = "Ok",
+            CloseButtonText = "Cancel"
+        };
+        _ = await contentDialog.ShowAsync();
+
     }*/
 }
 

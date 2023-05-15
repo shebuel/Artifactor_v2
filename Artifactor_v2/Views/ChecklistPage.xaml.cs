@@ -1,5 +1,5 @@
 ﻿using Artifactor_v2.ViewModels;
-
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
 namespace Artifactor_v2.Views;
@@ -16,4 +16,5 @@ public sealed partial class ChecklistPage : Page
         ViewModel = App.GetService<ChecklistViewModel>();
         InitializeComponent();
     }
+
 }

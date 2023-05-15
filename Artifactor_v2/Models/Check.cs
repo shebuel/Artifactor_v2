@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+﻿/*using System.Text.Json.Serialization;
 
 namespace Artifactor_v2.Models;
 
@@ -6,7 +6,7 @@ namespace Artifactor_v2.Models;
 /// A class for a query for checks.
 /// </summary>
 /// <param name="Checks">Gets the list of returned checks</param>
-public sealed record ChecksQueryResponse(IList<Check> Checks);
+// public sealed record ChecksQueryResponse(IList<Check> Checks);
 
 
 /// <summary>
@@ -20,7 +20,6 @@ public sealed record ChecksQueryResponse(IList<Check> Checks);
 /// <param name="TestName">Get the name of the testcase</param>
 /// <param name="TestType">Gets the type of the test case</param>
 
-
 public sealed record Check(
     [property: JsonPropertyName("testid")] string TestId,
     [property: JsonPropertyName("testname")] string TestName,
@@ -29,5 +28,7 @@ public sealed record Check(
     [property: JsonPropertyName("checkCompleted")] bool CheckCompleted,
     [property: JsonPropertyName("proofFilePath")] List<string> ProofFilePath,
     [property: JsonPropertyName("tags")] List<string> Tags,
-    [property: JsonPropertyName("status")] string Status);
+    [property: JsonPropertyName("status")] string Status
+    );
 
+*/

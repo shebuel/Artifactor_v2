@@ -8,7 +8,20 @@
     xmlns:core="using:Microsoft.Xaml.Interactions.Core" 
     xmlns:checks="using:Artifactor_v2.Models" 
     xmlns:collections="using:CommunityToolkit.Mvvm.Collections"
+    xmlns:helper="using:Artifactor_v2.Helpers"
+    xmlns:viewmodels="using:Artifactor_v2.ViewModels" d:DataContext="{d:DesignInstance Type=viewmodels:ChecklistViewModel}"
     mc:Ignorable="d">
+
+    <Page.Resources>
+        <helper:BooleanToColorConverter x:Key="ColorConverter"/>
+        <Style x:Key="Checked" TargetType="ListViewItem">
+            <Setter Property="Background" Value="{ThemeResource SystemFillColorSuccessBackgroundBrush}"/>
+        </Style>
+        <Style x:Key="UnChecked" TargetType="ListViewItem">
+            <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}"/>
+        </Style>
+    </Page.Resources>
+
     <interactivity:Interaction.Behaviors>
         <core:EventTriggerBehavior EventName="Loaded">
             <core:InvokeCommandAction Command="{x:Bind ViewModel.LoadChecksCommand}" />
@@ -22,9 +35,9 @@
                 <MenuFlyoutItem
                     Command="{x:Bind ViewModel.MarkCheckCompletedCommand}"
                     CommandParameter="{Binding}"
-                    Text="Remove contact">
+                    Text="Mark Check Completed">
                     <MenuFlyoutItem.Icon>
-                        <SymbolIcon Symbol="Delete" />
+                        <SymbolIcon Symbol="Accept" />
                     </MenuFlyoutItem.Icon>
                 </MenuFlyoutItem>
             </MenuFlyout>
@@ -33,9 +46,11 @@
             <CollectionViewSource
                 x:Name="CheckViewSource"
                 IsSourceGrouped="True"
-                Source="{x:Bind ViewModel.Checks, Mode=OneWay}" />
+                Source="{x:Bind ViewModel.ObservableChecks, Mode=OneWay}" />
+            
+            
 
-            <DataTemplate x:Key="CheckListViewTemplate" x:DataType="checks:Check">
+            <DataTemplate x:Key="CheckListViewTemplate" x:DataType="checks:ObservableCheck"  >
                 <Grid ContextFlyout="{StaticResource ContactMenuFlyout}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*" />
@@ -45,10 +60,10 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
                     <TextBlock Padding="10" Text="{x:Bind TestName}" Style="{StaticResource BodyTextBlockStyle}"
-                                    Foreground="{StaticResource TextFillColorPrimaryBrush}"
                                     VerticalAlignment="Center"
                                     HorizontalAlignment="Stretch"
                                     HorizontalTextAlignment="Left"
@@ -56,17 +71,17 @@
                                     Grid.Column="0" Grid.Row="0"/>
 
 
-                    <RadioButtons x:Name="BackgroundRadioButtons" SelectedIndex="0"  MaxColumns="3" Header="Test Status"  Width="400" Grid.Column="1" Grid.Row="0" SelectedItem="{x:Bind Status}">
+                    <RadioButtons x:Name="BackgroundRadioButtons" SelectedIndex="0"  MaxColumns="3"  Width="400" Grid.Column="1" Grid.Row="0" SelectedItem="{x:Bind Status, Mode=TwoWay}">
                         <x:String>Pass</x:String>
                         <x:String>Fail</x:String>
                         <x:String>Not Applicable</x:String>
                     </RadioButtons>
 
-                    <TextBox PlaceholderText="Enter Comments here" Width="500" Margin="20,0,0,0" Grid.Column="2" Grid.Row="0"></TextBox>
+                    <TextBox PlaceholderText="Enter Comments here" Width="Auto" Margin="20,5,20,0" Grid.Column="2" VerticalAlignment="Center" Grid.Row="0"></TextBox>
 
-                    <Button Background="{StaticResource SystemControlBackgroundAccentBrush}" DataContext="{x:Bind}" Grid.Column="2" Grid.Row="1" HorizontalAlignment="Center">Paste</Button>
+                    <Button Background="{StaticResource SystemControlBackgroundAccentBrush}" Grid.Column="3" Grid.Row="0" HorizontalAlignment="Center" Command="{Binding ElementName=ContentArea, Path=DataContext.PasteCommand, RelativeSource={RelativeSource Mode=TemplatedParent}}">Paste</Button>
 
-                    <Border BorderThickness="1" Grid.Row="1" Grid.ColumnSpan="2" BorderBrush="{ThemeResource ControlStrongStrokeColorDefaultBrush}"  Margin="10,10,10,10" CornerRadius="8">
+                    <Border BorderThickness="1" Grid.Row="1" Grid.ColumnSpan="4" BorderBrush="{ThemeResource ControlStrongStrokeColorDefaultBrush}"  Margin="10,10,10,10" CornerRadius="8">
                         <ListBox MinHeight="50" x:Name="FilePathTextBlock" ItemsSource="{x:Bind ProofFilePath}">
                             <x:String>No images created yet</x:String>
                         </ListBox>
@@ -74,25 +89,76 @@
                 </Grid>
             </DataTemplate>
         </Grid.Resources>
-
-        <ListView ItemTemplate="{StaticResource CheckListViewTemplate}"
+        
+        <!--Filters-->
+        <Grid VerticalAlignment="Top" HorizontalAlignment="Stretch" Margin="0,0,0,100">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="Filters:" Grid.Column="0" Grid.Row="0" Style="{ThemeResource BodyStrongTextBlockStyle}" Margin="0,10,0,20"/>
+            <ToggleSwitch Header="Category A" IsOn="True" Grid.Row="1" Grid.Column="0"/>
+            <ToggleSwitch Header="Category B" IsOn="True" Grid.Row="1" Grid.Column="1"/>
+            <ToggleSwitch Header="Category C" IsOn="True" Grid.Row="1" Grid.Column="2"/>
+        </Grid>
+        
+        <!--  Checks view  -->
+        <SemanticZoom Margin="0,150,0,0">
+            <SemanticZoom.ZoomedInView>
+                <ListView ItemTemplate="{StaticResource CheckListViewTemplate}"
                   ItemsSource="{x:Bind CheckViewSource.View, Mode=OneWay}"
                   SelectionMode="Single">
-            <ListView.GroupStyle>
-                <GroupStyle HidesIfEmpty="True">
-                    <GroupStyle.HeaderTemplate>
-                        <DataTemplate x:DataType="collections:IReadOnlyObservableGroup">
-                            <TextBlock
-                                        FontSize="24"
-                                        Foreground="{ThemeResource SystemControlHighlightAccentBrush}"
-                                        Text="{x:Bind Key}" />
-                        </DataTemplate>
-                    </GroupStyle.HeaderTemplate>
-                </GroupStyle>
-            </ListView.GroupStyle>
-        </ListView>
+                    <ListView.GroupStyle>
+                        <GroupStyle HidesIfEmpty="True">
+                            <GroupStyle.HeaderTemplate>
+                                <DataTemplate x:DataType="collections:IReadOnlyObservableGroup">
+                                    <TextBlock
+                                            FontSize="24"
+                                            Foreground="{ThemeResource SystemControlHighlightAccentBrush}"
+                                            Text="{x:Bind Key}" />
+                                </DataTemplate>
+                            </GroupStyle.HeaderTemplate>
+                        </GroupStyle>
+                    </ListView.GroupStyle>
 
-        <!--  Loading bar  -->
+                    <!--Code to change color when check marked complete -->
+                    <ListView.ItemContainerStyleSelector>
+                        <helper:CustomItemContainerStyleSelector x:Name="StyleSelectorObj"
+                            Checked="{StaticResource Checked}"
+                            UnChecked="{StaticResource UnChecked}"/>
+                    </ListView.ItemContainerStyleSelector>
+                </ListView>
+            </SemanticZoom.ZoomedInView>
+            <SemanticZoom.ZoomedOutView>
+                <ListView
+                    HorizontalAlignment="Stretch"
+                    ItemsSource="{x:Bind CheckViewSource.View.CollectionGroups, Mode=OneWay}"
+                    SelectionMode="Single">
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="ICollectionViewGroup">
+                            <Border Width="Auto" Height="Auto">
+                                <TextBlock
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Center"
+                                    FontSize="24"
+                                    Foreground="{ThemeResource SystemControlHighlightAccentBrush}"
+                                    Text="{x:Bind Group.(collections:IReadOnlyObservableGroup.Key)}" />
+                            </Border>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </SemanticZoom.ZoomedOutView>
+        </SemanticZoom>
+
+        <Button VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Content="Finish Artifact" Style="{StaticResource AccentButtonStyle}" Command="{x:Bind ViewModel.CompleteCommand}" CommandParameter="{Binding}"></Button>
+
+        
+            <!--  Loading bar  -->
         <ProgressBar
             HorizontalAlignment="Stretch"
             VerticalAlignment="Top"
@@ -101,13 +167,7 @@
 
 
         <!--  Loads more contacts  -->
-        <Button
-            
-            HorizontalAlignment="Right"
-            VerticalAlignment="Bottom"
-            Style="{StaticResource AccentButtonStyle}"
-            
-            Content="Load more contacts" />
-
+        
+        
     </Grid>
 </Page>
