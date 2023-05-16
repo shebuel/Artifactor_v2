@@ -37,7 +37,7 @@ public class ObservableCheck
         get; init;
     }
     [property: JsonPropertyName("testtype")]
-    public string? TestType
+    public string TestType
     {
         get; init;
     }

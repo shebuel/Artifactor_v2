@@ -6,14 +6,6 @@ using System.Threading.Tasks;
 
 namespace Artifactor_v2.Models;
 
-class ChecksQueryResponse
-{
-    public IList<ObservableCheck>? Checks
-    {
-    get; set; }
+internal record ChecksQueryResponse(IList<ObservableCheck> Checks
+);
 
-    public ChecksQueryResponse(IList<ObservableCheck> observableChecks)
-    {
-        Checks = observableChecks;
-    }
-}

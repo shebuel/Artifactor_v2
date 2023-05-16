@@ -1,7 +1,4 @@
-﻿using System.Reflection.Metadata.Ecma335;
-using Artifactor_v2.Core.Helpers;
-using Artifactor_v2.Helpers;
-using Artifactor_v2.Models;
+﻿using Artifactor_v2.Models;
 using CommunityToolkit.Mvvm.Collections;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -12,7 +9,6 @@ using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage.Pickers;
 using Windows.Storage.Streams;
 using Windows.Storage;
-using Microsoft.UI.Xaml.Controls;
 
 namespace Artifactor_v2.ViewModels;
 
@@ -20,8 +16,73 @@ public partial class ChecklistViewModel : ObservableRecipient
 {
     public ChecklistViewModel()
     {
-        /*PasteCommand = new AsyncRelayCommand(Paste);*/
-    }        
+    }
+
+    
+    [RelayCommand]
+    private async void PasteAsync(ObservableCheck checkPaste)
+    {
+        var _index = 0;
+
+
+        if (checkPaste != null)
+        {
+            _index = ObservableChecks.FirstGroupByKey(checkPaste.TestType.ToString()).IndexOf(checkPaste);
+        }
+
+        var dataPackageView = Clipboard.GetContent();
+        if (dataPackageView != null && dataPackageView.Contains("Bitmap"))
+        {
+            IRandomAccessStreamReference? imageReceived = null;
+            imageReceived = await dataPackageView.GetBitmapAsync();
+            if (imageReceived != null)
+            {
+                using var imageStream = await imageReceived.OpenReadAsync();
+                /*WriteableBitmap bitmapImage = new WriteableBitmap(500, 500);
+                await bitmapImage.SetSourceAsync(imageStream);
+
+                StorageFile outputFile = new StorageFile.GetFileFromPathAsync("C:\\Users\\jsheb\\Downloads");
+
+                String OutputFolder = "C:\\Users\\jsheb\\Downloads";
+
+                var imageFileStream = File.OpenWrite(OutputFolder + "\\" + ObservableChecks.FirstGroupByKey(checkPaste.TestType.ToString()).ElementAt(_index).TestId[0] + "_001");
+                BitmapEncoder encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, imageFileStream);*/
+
+                var fileCount = 1;
+
+
+                if (ObservableChecks.FirstGroupByKey(checkPaste.TestType.ToString()).ElementAt(_index).ProofFilePath != null)
+                    fileCount = ObservableChecks.FirstGroupByKey(checkPaste.TestType.ToString()).ElementAt(_index).ProofFilePath.Count + 1;
+
+
+
+
+                var fileSave = new FileSavePicker();
+                fileSave.FileTypeChoices.Add("Image", new string[] { ".png" });
+                fileSave.DefaultFileExtension = ".png";
+                fileSave.SuggestedFileName = ObservableChecks.FirstGroupByKey(checkPaste.TestType.ToString()).ElementAt(_index).TestId + "_" + fileCount.ToString();
+                fileSave.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+
+                // Retrieve the window handle (HWND) of the current WinUI 3 window. 
+                var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+
+                // Initialize the folder picker with the window handle (HWND).
+                WinRT.Interop.InitializeWithWindow.Initialize(fileSave, hWnd);
+
+                var storageFile = await fileSave.PickSaveFileAsync();
+
+                ObservableChecks.FirstGroupByKey(checkPaste.TestType.ToString()).ElementAt(_index).ProofFilePath.Add(storageFile.Path);
+
+                //consoleLog.Text = checksSanitized[_index].filePath[0];
+
+                //checksSanitized.GetEnumerator().MoveNext();
+                //TODO: Create a null exception
+
+                using var stream = await storageFile.OpenAsync(FileAccessMode.ReadWrite);
+                await imageStream.AsStreamForRead().CopyToAsync(stream.AsStreamForWrite());
+            }
+        }
+    }
 
     /// <summary>
     /// Gets the current collection of checks
@@ -155,71 +216,8 @@ public partial class ChecklistViewModel : ObservableRecipient
         File.WriteAllText(@"C:\Users\jsheb\Downloads\jsonOutput.txt", json);
     }
 
-    /*public IAsyncRelayCommand PasteCommand
-    {
-    get; private set; }*/
+    
 
-    /*private async Task Paste()
-    {
-        var _index = 0;
-        
-        if (checkPaste != null)
-        {
-            _index = ObservableChecks.FirstGroupByKey(checkPaste.TestType.ToString()).IndexOf(checkPaste);
-        }
-
-        var dataPackageView = Clipboard.GetContent();
-        if (dataPackageView != null && dataPackageView.Contains("Bitmap"))
-        {
-            IRandomAccessStreamReference? imageReceived = null;
-            imageReceived = await dataPackageView.GetBitmapAsync();
-            if (imageReceived != null)
-            {
-                using var imageStream = await imageReceived.OpenReadAsync();
-                *//*WriteableBitmap bitmapImage = new WriteableBitmap(500, 500);
-                await bitmapImage.SetSourceAsync(imageStream);
-
-                StorageFile outputFile = new StorageFile.GetFileFromPathAsync("C:\\Users\\jsheb\\Downloads");
-
-
-                FileStream imageFileStream = File.OpenWrite(OutputFolder + "\\" + checks[0].testID + "_001");
-                BitmapEncoder encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, imageFileStream);*//*
-
-                var fileCount = 1;
-
-
-                if (ObservableChecks.FirstGroupByKey(checkPaste.TestType.ToString()).ElementAt(_index).ProofFilePath != null)
-                    fileCount = ObservableChecks.FirstGroupByKey(checkPaste.TestType.ToString()).ElementAt(_index).ProofFilePath.Count + 1;
-
-
-
-
-                var fileSave = new FileSavePicker();
-                fileSave.FileTypeChoices.Add("Image", new string[] { ".png" });
-                fileSave.DefaultFileExtension = ".png";
-                fileSave.SuggestedFileName = ObservableChecks.FirstGroupByKey(checkPaste.TestType.ToString()).ElementAt(_index).TestId + "_" + fileCount.ToString();
-                fileSave.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
-
-                // Retrieve the window handle (HWND) of the current WinUI 3 window. 
-                var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-
-                // Initialize the folder picker with the window handle (HWND).
-                WinRT.Interop.InitializeWithWindow.Initialize(fileSave, hWnd);
-
-                var storageFile = await fileSave.PickSaveFileAsync();
-
-                ObservableChecks.FirstGroupByKey(checkPaste.TestType.ToString()).ElementAt(_index).ProofFilePath.Add(storageFile.Path);
-
-                //consoleLog.Text = checksSanitized[_index].filePath[0];
-
-                //checksSanitized.GetEnumerator().MoveNext();
-                //TODO: Create a null exception
-
-                using var stream = await storageFile.OpenAsync(FileAccessMode.ReadWrite);
-                await imageStream.AsStreamForRead().CopyToAsync(stream.AsStreamForWrite());
-            }
-        }
-    }*/
 
     [RelayCommand]
     private void Complete()
@@ -231,9 +229,9 @@ public partial class ChecklistViewModel : ObservableRecipient
             PrimaryButtonText = "Ok",
             CloseButtonText = "Cancel"
         };
-        _ = await contentDialog.ShowAsync();
+        _ = await contentDialog.ShowAsync();*/
 
-    }*/
+    }
 }
 
     

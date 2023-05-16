@@ -14,6 +14,7 @@ public sealed partial class ChecklistPage : Page
     public ChecklistPage()
     {
         ViewModel = App.GetService<ChecklistViewModel>();
+        DataContext = ViewModel;
         InitializeComponent();
     }
 

@@ -10,7 +10,8 @@
     xmlns:collections="using:CommunityToolkit.Mvvm.Collections"
     xmlns:helper="using:Artifactor_v2.Helpers"
     xmlns:viewmodels="using:Artifactor_v2.ViewModels" d:DataContext="{d:DesignInstance Type=viewmodels:ChecklistViewModel}"
-    mc:Ignorable="d">
+    mc:Ignorable="d"
+    x:Name="PageTop">
 
     <Page.Resources>
         <helper:BooleanToColorConverter x:Key="ColorConverter"/>
@@ -79,7 +80,7 @@
 
                     <TextBox PlaceholderText="Enter Comments here" Width="Auto" Margin="20,5,20,0" Grid.Column="2" VerticalAlignment="Center" Grid.Row="0"></TextBox>
 
-                    <Button Background="{StaticResource SystemControlBackgroundAccentBrush}" Grid.Column="3" Grid.Row="0" HorizontalAlignment="Center" Command="{Binding ElementName=ContentArea, Path=DataContext.PasteCommand, RelativeSource={RelativeSource Mode=TemplatedParent}}">Paste</Button>
+                    <Button Background="{StaticResource SystemControlBackgroundAccentBrush}" Grid.Column="3" Grid.Row="0" HorizontalAlignment="Center" Command="{Binding ElementName=ContentArea, Path=DataContext.PasteAsyncCommand}" CommandParameter="{Binding}">Paste</Button>
 
                     <Border BorderThickness="1" Grid.Row="1" Grid.ColumnSpan="4" BorderBrush="{ThemeResource ControlStrongStrokeColorDefaultBrush}"  Margin="10,10,10,10" CornerRadius="8">
                         <ListBox MinHeight="50" x:Name="FilePathTextBlock" ItemsSource="{x:Bind ProofFilePath}">
