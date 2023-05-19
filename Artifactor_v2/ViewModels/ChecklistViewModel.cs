@@ -3,12 +3,14 @@ using CommunityToolkit.Mvvm.Collections;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ExcelDataReader;
-using Microsoft.UI.Xaml;
 using Newtonsoft.Json;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage.Pickers;
 using Windows.Storage.Streams;
 using Windows.Storage;
+using System.Data;
+using Excel = Microsoft.Office.Interop.Excel;
+using ClosedXML.Excel;
 
 namespace Artifactor_v2.ViewModels;
 
@@ -16,9 +18,48 @@ public partial class ChecklistViewModel : ObservableRecipient
 {
     public ChecklistViewModel()
     {
+        OutputFolder = "C:\\Users\\jsheb\\Documents\\CheckOutput\\";
     }
 
-    
+    /// <summary>
+    /// Gets the current collection of checks
+    /// </summary>
+    public ObservableGroupedCollection<string, ObservableCheck> ObservableChecks = new();
+    private List<ObservableCheck>? _checks;
+    private ChecksQueryResponse? ChecksQuery;
+    private readonly string OutputFolder;
+
+    /// <summary>
+    /// Load the checks to dispaly
+    /// </summary>
+    /// 
+    [RelayCommand(FlowExceptionsToTaskScheduler = true)]
+    private Task LoadChecksAsync()
+    {
+        _checks = new()
+        {
+            check1,
+            check2
+        };
+
+        ExcelToJson();
+        ChecksQuery = new(_checks);
+
+
+        ObservableChecks = new ObservableGroupedCollection<string, ObservableCheck>(
+            ChecksQuery.Checks
+            .GroupBy(static c => c.TestType));
+
+        //await LoadChecksAsync();
+
+        OnPropertyChanged(nameof(ObservableChecks));
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Implements the paste command to show PoC file name in file picker
+    /// </summary>
+    /// 
     [RelayCommand]
     private async void PasteAsync(ObservableCheck checkPaste)
     {
@@ -33,29 +74,15 @@ public partial class ChecklistViewModel : ObservableRecipient
         var dataPackageView = Clipboard.GetContent();
         if (dataPackageView != null && dataPackageView.Contains("Bitmap"))
         {
-            IRandomAccessStreamReference? imageReceived = null;
-            imageReceived = await dataPackageView.GetBitmapAsync();
+            IRandomAccessStreamReference? imageReceived = await dataPackageView.GetBitmapAsync();
             if (imageReceived != null)
             {
                 using var imageStream = await imageReceived.OpenReadAsync();
-                /*WriteableBitmap bitmapImage = new WriteableBitmap(500, 500);
-                await bitmapImage.SetSourceAsync(imageStream);
-
-                StorageFile outputFile = new StorageFile.GetFileFromPathAsync("C:\\Users\\jsheb\\Downloads");
-
-                String OutputFolder = "C:\\Users\\jsheb\\Downloads";
-
-                var imageFileStream = File.OpenWrite(OutputFolder + "\\" + ObservableChecks.FirstGroupByKey(checkPaste.TestType.ToString()).ElementAt(_index).TestId[0] + "_001");
-                BitmapEncoder encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, imageFileStream);*/
-
+                
                 var fileCount = 1;
-
 
                 if (ObservableChecks.FirstGroupByKey(checkPaste.TestType.ToString()).ElementAt(_index).ProofFilePath != null)
                     fileCount = ObservableChecks.FirstGroupByKey(checkPaste.TestType.ToString()).ElementAt(_index).ProofFilePath.Count + 1;
-
-
-
 
                 var fileSave = new FileSavePicker();
                 fileSave.FileTypeChoices.Add("Image", new string[] { ".png" });
@@ -71,7 +98,12 @@ public partial class ChecklistViewModel : ObservableRecipient
 
                 var storageFile = await fileSave.PickSaveFileAsync();
 
-                ObservableChecks.FirstGroupByKey(checkPaste.TestType.ToString()).ElementAt(_index).ProofFilePath.Add(storageFile.Path);
+                //ObservableChecks.FirstGroupByKey(checkPaste.TestType.ToString()).ElementAt(_index).ProofFilePath.Add(storageFile.Path);
+
+
+                ObservableChecks.FirstGroupByKey(checkPaste.TestType.ToString()).RemoveAt(_index);
+                checkPaste.ProofFilePath.Add(storageFile.Path);
+                ObservableChecks.FirstGroupByKey(checkPaste.TestType.ToString()).Insert(_index, checkPaste);
 
                 //consoleLog.Text = checksSanitized[_index].filePath[0];
 
@@ -82,15 +114,11 @@ public partial class ChecklistViewModel : ObservableRecipient
                 await imageStream.AsStreamForRead().CopyToAsync(stream.AsStreamForWrite());
             }
         }
+
+        //OnPropertyChanged(nameof(ObservableChecks));
     }
 
-    /// <summary>
-    /// Gets the current collection of checks
-    /// </summary>
-    public ObservableGroupedCollection<string, ObservableCheck> ObservableChecks = new();
-
-    private List<ObservableCheck>? _checks;
-    private ChecksQueryResponse? ChecksQuery;
+    
     private readonly ObservableCheck check1 = new()
     {
         TestId = "testID",
@@ -115,45 +143,23 @@ public partial class ChecklistViewModel : ObservableRecipient
     };
 
 
-
-    /// <summary>
-    /// Load the checks to dispaly
-    /// </summary>
-    /// 
-    [RelayCommand(FlowExceptionsToTaskScheduler = true)]
-    private Task LoadChecksAsync()
-    {
-        _checks = new()
-        {
-            check1,
-            check2
-        };
-
-        ExcelToJson();
-        ChecksQuery = new(_checks);
-
-
-        ObservableChecks = new ObservableGroupedCollection<string, ObservableCheck>(
-            ChecksQuery.Checks
-            .GroupBy(static c=> c.TestType));
-
-        //await LoadChecksAsync();
-
-        OnPropertyChanged(nameof(ObservableChecks));
-        return Task.CompletedTask;
-    }
-
     [RelayCommand]
     private void MarkCheckCompleted(ObservableCheck ObservableCheck)
     {
         var _index = ObservableChecks.FirstGroupByKey(ObservableCheck.TestType.ToString()).IndexOf(ObservableCheck);
-        ObservableChecks.FirstGroupByKey(ObservableCheck.TestType.ToString()).ElementAt(_index).CheckCompleted = true;
-        OnPropertyChanged(nameof(ObservableChecks));
+        //ObservableChecks.FirstGroupByKey(ObservableCheck.TestType.ToString()).ElementAt(_index).CheckCompleted = true;
+        
+        ObservableChecks.FirstGroupByKey(ObservableCheck.TestType.ToString()).RemoveAt(_index);
+        ObservableCheck.CheckCompleted = true;
+        ObservableChecks.FirstGroupByKey(ObservableCheck.TestType.ToString()).Insert(_index, ObservableCheck);
+
+        //OnPropertyChanged(nameof(ObservableChecks));
     }
 
     private void ExcelToJson()
     {
         using var stream = File.Open("C:\\Users\\jsheb\\Downloads\\Deloitte_Allianz_IAPT_Checklist_v.1.2.xlsx", FileMode.Open, FileAccess.Read);
+        
         //Had to include to stop the reader from breaking coz not supporting encoding
         System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
 
@@ -222,6 +228,114 @@ public partial class ChecklistViewModel : ObservableRecipient
     [RelayCommand]
     private void Complete()
     {
+        List<ObservableCheck> _checksList = new List<ObservableCheck>();
+        List<ObservableCheck> _completedChecksList = new List<ObservableCheck>();
+        var excelFilePath = OutputFolder + "Artifact_Output.xlsx";
+        
+        foreach (var group in ObservableChecks)
+        {
+            _checksList.AddRange(group.ToList());
+        }
+
+        var _count = _checksList.Count;
+
+        foreach (var check in _checksList)
+        {
+            if (check.CheckCompleted)
+            {
+                _completedChecksList.Add(check);
+            }
+        }
+
+        var _completedChecksListFlat = new List<ChecksFlatList>();
+
+        foreach (var check in _completedChecksList)
+        {
+            if (check.ProofFilePath != null)
+            {
+                var _proofFilePathString = string.Join(",", check.ProofFilePath);
+                var _tagsFlatString = string.Join(",", check.Tags);
+                ChecksFlatList _checkFlat = new()
+                {
+                    TestId = check.TestId,
+                    TestName = check.TestName,
+                    TestDescription = check.TestDescription,
+                    TestType = check.TestType,
+                    CheckCompleted = check.CheckCompleted,
+                    ProofFilePath = _proofFilePathString,
+                    Tags = _tagsFlatString,
+                    Status = check.Status
+                };
+                _completedChecksListFlat.Add(_checkFlat);
+
+            }
+        }
+
+        var json = JsonConvert.SerializeObject(_completedChecksListFlat, Formatting.Indented);
+
+        DataTable dt = (DataTable)JsonConvert.DeserializeObject(json, typeof(DataTable));
+
+        XLWorkbook wb = new XLWorkbook();
+        wb.Worksheets.Add(dt, "Artifact");
+        wb.SaveAs(excelFilePath);
+
+        /*try
+        {
+            if (tbl == null || tbl.Columns.Count == 0)
+                throw new Exception("ExportToExcel: Null or empty input table!\n");
+
+            // load excel, and create a new workbook
+            var excelApp = new Excel.Application();
+            excelApp.Workbooks.Add();
+
+            // single worksheet
+            Excel._Worksheet workSheet = (Excel._Worksheet)excelApp.ActiveSheet;
+
+            // column headings
+            for (var i = 0; i < tbl.Columns.Count; i++)
+            {
+                workSheet.Cells[1, i + 1] = tbl.Columns[i].ColumnName;
+            }
+
+            // rows
+            for (var i = 0; i < tbl.Rows.Count; i++)
+            {
+                // to do: format datetime values before printing
+                for (var j = 0; j < tbl.Columns.Count; j++)
+                {
+                    workSheet.Cells[i + 2, j + 1] = tbl.Rows[i][j];
+                }
+            }
+
+            // check file path
+            if (!string.IsNullOrEmpty(excelFilePath))
+            {
+                try
+                {
+                    workSheet.SaveAs(excelFilePath);
+                    excelApp.Quit();
+                    Console.WriteLine("Excel file saved!");
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception("ExportToExcel: Excel file could not be saved! Check filepath.\n"
+                                        + ex.Message);
+                }
+            }
+            else
+            { // no file path is given
+                excelApp.Visible = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception("ExportToExcel: \n" + ex.Message);
+        }*/
+
+        Console.WriteLine(_count.ToString());
+
+
+        
         /*var contentDialog = new ContentDialog
         {
             Title = "Finish",

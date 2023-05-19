@@ -50,8 +50,8 @@
                 Source="{x:Bind ViewModel.ObservableChecks, Mode=OneWay}" />
             
             
-
-            <DataTemplate x:Key="CheckListViewTemplate" x:DataType="checks:ObservableCheck"  >
+            <!-- Template for check item-->
+            <DataTemplate x:Key="CheckListViewTemplate" x:DataType="checks:ObservableCheck" >
                 <Grid ContextFlyout="{StaticResource ContactMenuFlyout}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*" />
@@ -70,7 +70,6 @@
                                     HorizontalTextAlignment="Left"
                                     Width="400"
                                     Grid.Column="0" Grid.Row="0"/>
-
 
                     <RadioButtons x:Name="BackgroundRadioButtons" SelectedIndex="0"  MaxColumns="3"  Width="400" Grid.Column="1" Grid.Row="0" SelectedItem="{x:Bind Status, Mode=TwoWay}">
                         <x:String>Pass</x:String>
@@ -113,7 +112,7 @@
             <SemanticZoom.ZoomedInView>
                 <ListView ItemTemplate="{StaticResource CheckListViewTemplate}"
                   ItemsSource="{x:Bind CheckViewSource.View, Mode=OneWay}"
-                  SelectionMode="Single">
+                  SelectionMode="Single" >
                     <ListView.GroupStyle>
                         <GroupStyle HidesIfEmpty="True">
                             <GroupStyle.HeaderTemplate>
@@ -133,6 +132,12 @@
                             Checked="{StaticResource Checked}"
                             UnChecked="{StaticResource UnChecked}"/>
                     </ListView.ItemContainerStyleSelector>
+
+                    <ListView.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <ItemsStackPanel ItemsUpdatingScrollMode="KeepScrollOffset"/>
+                        </ItemsPanelTemplate>
+                    </ListView.ItemsPanel>
                 </ListView>
             </SemanticZoom.ZoomedInView>
             <SemanticZoom.ZoomedOutView>
@@ -156,7 +161,7 @@
             </SemanticZoom.ZoomedOutView>
         </SemanticZoom>
 
-        <Button VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Content="Finish Artifact" Style="{StaticResource AccentButtonStyle}" Command="{x:Bind ViewModel.CompleteCommand}" CommandParameter="{Binding}"></Button>
+        <Button VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Content="Finish Artifact" Style="{StaticResource AccentButtonStyle}" Command="{x:Bind ViewModel.CompleteCommand}"></Button>
 
         
             <!--  Loading bar  -->
