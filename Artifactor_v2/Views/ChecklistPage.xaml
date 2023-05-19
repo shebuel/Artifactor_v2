@@ -77,14 +77,13 @@
                         <x:String>Not Applicable</x:String>
                     </RadioButtons>
 
-                    <TextBox PlaceholderText="Enter Comments here" Width="Auto" Margin="20,5,20,0" Grid.Column="2" VerticalAlignment="Center" Grid.Row="0"></TextBox>
+                    <TextBox PlaceholderText="Enter Comments here" Width="Auto" Margin="20,5,20,0" Grid.Column="2" VerticalAlignment="Center" Grid.Row="0" Text="{x:Bind Comment}"></TextBox>
 
-                    <Button Background="{StaticResource SystemControlBackgroundAccentBrush}" Grid.Column="3" Grid.Row="0" HorizontalAlignment="Center" Command="{Binding ElementName=ContentArea, Path=DataContext.PasteAsyncCommand}" CommandParameter="{Binding}">Paste</Button>
+                    <Button Background="{StaticResource SystemControlBackgroundAccentBrush}" Grid.Column="3" Grid.Row="0" HorizontalAlignment="Center" Command="{Binding ElementName=ContentArea, Path=DataContext.PasteCommand}" CommandParameter="{Binding}">Paste</Button>
 
                     <Border BorderThickness="1" Grid.Row="1" Grid.ColumnSpan="4" BorderBrush="{ThemeResource ControlStrongStrokeColorDefaultBrush}"  Margin="10,10,10,10" CornerRadius="8">
-                        <ListBox MinHeight="50" x:Name="FilePathTextBlock" ItemsSource="{x:Bind ProofFilePath}">
-                            <x:String>No images created yet</x:String>
-                        </ListBox>
+                        <ListBox x:Name="FilePathTextBlock" ItemsSource="{x:Bind ProofFilePath}">
+                            </ListBox>
                     </Border>
                 </Grid>
             </DataTemplate>
@@ -127,11 +126,7 @@
                     </ListView.GroupStyle>
 
                     <!--Code to change color when check marked complete -->
-                    <ListView.ItemContainerStyleSelector>
-                        <helper:CustomItemContainerStyleSelector x:Name="StyleSelectorObj"
-                            Checked="{StaticResource Checked}"
-                            UnChecked="{StaticResource UnChecked}"/>
-                    </ListView.ItemContainerStyleSelector>
+                    
 
                     <ListView.ItemsPanel>
                         <ItemsPanelTemplate>

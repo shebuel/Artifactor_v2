@@ -11,6 +11,8 @@ using Windows.Storage;
 using System.Data;
 using Excel = Microsoft.Office.Interop.Excel;
 using ClosedXML.Excel;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml;
 
 namespace Artifactor_v2.ViewModels;
 
@@ -18,7 +20,7 @@ public partial class ChecklistViewModel : ObservableRecipient
 {
     public ChecklistViewModel()
     {
-        OutputFolder = "C:\\Users\\jsheb\\Documents\\CheckOutput\\";
+        OutputFolder = "C:\\Users\\shpaul\\Documents\\CheckOutput\\";
     }
 
     /// <summary>
@@ -61,7 +63,7 @@ public partial class ChecklistViewModel : ObservableRecipient
     /// </summary>
     /// 
     [RelayCommand]
-    private async void PasteAsync(ObservableCheck checkPaste)
+    private async Task PasteAsync(ObservableCheck checkPaste)
     {
         var _index = 0;
 
@@ -72,7 +74,8 @@ public partial class ChecklistViewModel : ObservableRecipient
         }
 
         var dataPackageView = Clipboard.GetContent();
-        if (dataPackageView != null && dataPackageView.Contains("Bitmap"))
+        
+        if (dataPackageView !=null && dataPackageView.Contains("Bitmap"))
         {
             IRandomAccessStreamReference? imageReceived = await dataPackageView.GetBitmapAsync();
             if (imageReceived != null)
@@ -100,19 +103,40 @@ public partial class ChecklistViewModel : ObservableRecipient
 
                 //ObservableChecks.FirstGroupByKey(checkPaste.TestType.ToString()).ElementAt(_index).ProofFilePath.Add(storageFile.Path);
 
+                if(storageFile != null) {
 
-                ObservableChecks.FirstGroupByKey(checkPaste.TestType.ToString()).RemoveAt(_index);
-                checkPaste.ProofFilePath.Add(storageFile.Path);
-                ObservableChecks.FirstGroupByKey(checkPaste.TestType.ToString()).Insert(_index, checkPaste);
+                    using var stream = await storageFile.OpenAsync(FileAccessMode.ReadWrite);
+                    await imageStream.AsStreamForRead().CopyToAsync(stream.AsStreamForWrite());
 
-                //consoleLog.Text = checksSanitized[_index].filePath[0];
 
-                //checksSanitized.GetEnumerator().MoveNext();
-                //TODO: Create a null exception
+                    ObservableChecks.FirstGroupByKey(checkPaste.TestType.ToString()).RemoveAt(_index);
+                    checkPaste.ProofFilePath.Add(storageFile.Path);
+                    ObservableChecks.FirstGroupByKey(checkPaste.TestType.ToString()).Insert(_index, checkPaste);
 
-                using var stream = await storageFile.OpenAsync(FileAccessMode.ReadWrite);
-                await imageStream.AsStreamForRead().CopyToAsync(stream.AsStreamForWrite());
+                    //consoleLog.Text = checksSanitized[_index].filePath[0];
+
+                    //checksSanitized.GetEnumerator().MoveNext();
+                    //TODO: Create a null exception 
+                }
+                else
+                {
+                    Console.WriteLine("Operation Cancelled");
+                }   
             }
+        }
+        else
+        {
+            ContentDialog dailog = new ContentDialog()
+            {
+                XamlRoot = App.MainWindow.Content.XamlRoot,
+                Title = "No Image Found",
+                Content = "Please copy an image into the clipboard and try again",
+                CloseButtonText = "OK",
+                Style = App.Current.Resources["DefaultContentDialogStyle"] as Style,
+                DefaultButton = ContentDialogButton.Close,
+                RequestedTheme = ElementTheme.Dark
+            };
+            await dailog.ShowAsync();
         }
 
         //OnPropertyChanged(nameof(ObservableChecks));
@@ -128,7 +152,8 @@ public partial class ChecklistViewModel : ObservableRecipient
         CheckCompleted = true,
         ProofFilePath = new List<string> { "filepath1", "filepath2" },
         Tags = new List<string> { "tag1", "tag2" },
-        Status = "Pass"
+        Status = "Pass",
+        Comment = ""
     };
     private readonly ObservableCheck check2 = new()
     {
@@ -139,7 +164,8 @@ public partial class ChecklistViewModel : ObservableRecipient
         CheckCompleted = true,
         ProofFilePath = new List<string> { "filepath1", "filepath2" },
         Tags = new List<string> { "tag1", "tag2" },
-        Status = "Pass"
+        Status = "Pass",
+        Comment = ""
     };
 
 
@@ -158,7 +184,7 @@ public partial class ChecklistViewModel : ObservableRecipient
 
     private void ExcelToJson()
     {
-        using var stream = File.Open("C:\\Users\\jsheb\\Downloads\\Deloitte_Allianz_IAPT_Checklist_v.1.2.xlsx", FileMode.Open, FileAccess.Read);
+        using var stream = File.Open("C:\\Users\\shpaul\\Downloads\\Deloitte_Allianz_IAPT_Checklist_v.1.2.xlsx", FileMode.Open, FileAccess.Read);
         
         //Had to include to stop the reader from breaking coz not supporting encoding
         System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
@@ -188,7 +214,8 @@ public partial class ChecklistViewModel : ObservableRecipient
                                 CheckCompleted = false,
                                 ProofFilePath = new List<string>() { },
                                 Tags = new List<string>(reader.GetString(4).Split(',')),
-                                Status = "Pass"
+                                Status = "Pass",
+                                Comment = ""
                             };
                             _checks.Add(_getCheck);
                         }
@@ -215,11 +242,11 @@ public partial class ChecklistViewModel : ObservableRecipient
         // The result of each spreadsheet is in result.Tables
 
 
-        //var xmloutputFile = File.OpenWrite("C:\\Users\\jsheb\\Downloads\\xmlOutput.txt");
+        //var xmloutputFile = File.OpenWrite("C:\\Users\\shpaul\\Downloads\\xmlOutput.txt");
         //result.WriteXml(xmloutputFile);
 
-        //var jsonoutputFile = File.OpenWrite("C:\\Users\\jsheb\\Downloads\\jsonOutput.txt");
-        File.WriteAllText(@"C:\Users\jsheb\Downloads\jsonOutput.txt", json);
+        //var jsonoutputFile = File.OpenWrite("C:\\Users\\shpaul\\Downloads\\jsonOutput.txt");
+        File.WriteAllText(@"C:\Users\shpaul\Downloads\jsonOutput.txt", json);
     }
 
     
