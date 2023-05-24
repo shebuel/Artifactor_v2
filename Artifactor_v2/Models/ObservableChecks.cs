@@ -61,4 +61,9 @@ public class ObservableCheck
     {
         get; set;
     }
+    [property: JsonPropertyName("comment")]
+    public string? Comment
+    {
+        get; set;
+    }
 }

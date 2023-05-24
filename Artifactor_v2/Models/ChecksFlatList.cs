@@ -61,4 +61,9 @@ public class ChecksFlatList
     {
         get; set;
     }
+    [property: JsonPropertyName("comment")]
+    public string? Comment
+    {
+        get; set;
+    }
 }

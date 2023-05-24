@@ -1,0 +1,5 @@
+<ListView.ItemContainerStyleSelector>
+                        <helper:CustomItemContainerStyleSelector x:Name="StyleSelectorObj"
+                            Checked="{StaticResource Checked}"
+                            UnChecked="{StaticResource UnChecked}"/>
+                    </ListView.ItemContainerStyleSelector>
