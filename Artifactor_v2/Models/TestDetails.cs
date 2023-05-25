@@ -24,5 +24,8 @@ public class TestDetails
     {
         get; set;
     }
-
+    public bool? Continue
+    {
+        get; set; 
+    }
 }

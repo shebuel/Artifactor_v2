@@ -13,14 +13,19 @@ using Excel = Microsoft.Office.Interop.Excel;
 using ClosedXML.Excel;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml;
+using CommunityToolkit.Mvvm.Messaging;
+using Artifactor_v2.Core.Contracts.Services;
 
 namespace Artifactor_v2.ViewModels;
 
 public partial class ChecklistViewModel : ObservableRecipient
 {
-    public ChecklistViewModel()
+    public ChecklistViewModel(IFileService fileService)
     {
-        OutputFolder = "C:\\Users\\shpaul\\Documents\\CheckOutput\\";
+        OutputFolder = "C:\\Users\\jsheb\\Documents\\CheckOutput\\";
+        _fileService = fileService;
+
+
     }
 
     /// <summary>
@@ -30,32 +35,71 @@ public partial class ChecklistViewModel : ObservableRecipient
     private List<ObservableCheck>? _checks;
     private ChecksQueryResponse? ChecksQuery;
     private readonly string OutputFolder;
+    private readonly IFileService _fileService;
+    private const string _defaultChecksFileName = "checklist.json";
+    private TestDetails? TestDetailsFromMain {
+        get;  set;
+    }
+
 
     /// <summary>
     /// Load the checks to dispaly
     /// </summary>
     /// 
     [RelayCommand(FlowExceptionsToTaskScheduler = true)]
-    private Task LoadChecksAsync()
+    private async Task LoadChecksAsync()
     {
-        _checks = new()
+
+        TestDetailsFromMain = WeakReferenceMessenger.Default.Send<TestDetailsRequestMessage>();
+
+        if (TestDetailsFromMain == null) {
+            ContentDialog dailog = new ContentDialog()
+            {
+                XamlRoot = App.MainWindow.Content.XamlRoot,
+                Title = "Test Details Not Found",
+                Content = "Please re-open the application and enter Test Details",
+                CloseButtonText = "OK",
+                Style = App.Current.Resources["DefaultContentDialogStyle"] as Style,
+                DefaultButton = ContentDialogButton.Close,
+                RequestedTheme = ElementTheme.Dark
+            };
+            await dailog.ShowAsync();
+        }
+        else if (TestDetailsFromMain.Continue == true) 
         {
-            check1,
-            check2
-        };
+           
+           var ObservableChecksRead = await Task.Run(() => _fileService.Read<List<ObservableCheck>>(TestDetailsFromMain.OutputFolderPath, _defaultChecksFileName));
+           _checks = ObservableChecksRead;
+           ChecksQuery = new(ObservableChecksRead);
 
-        ExcelToJson();
-        ChecksQuery = new(_checks);
+           ObservableChecks = new ObservableGroupedCollection<string, ObservableCheck>(
+               ChecksQuery.Checks
+               .GroupBy(static c => c.TestType));
+
+           OnPropertyChanged(nameof(ObservableChecks));
+        }
+        else
+        {
+            _checks = new()
+            {
+                check1,
+                check2
+            };
+
+            ExcelToJson(TestDetailsFromMain.ApplicationType);
+            ChecksQuery = new(_checks);
 
 
-        ObservableChecks = new ObservableGroupedCollection<string, ObservableCheck>(
-            ChecksQuery.Checks
-            .GroupBy(static c => c.TestType));
+            ObservableChecks = new ObservableGroupedCollection<string, ObservableCheck>(
+                ChecksQuery.Checks
+                .GroupBy(static c => c.TestType));
 
-        //await LoadChecksAsync();
+            //await LoadChecksAsync();
 
-        OnPropertyChanged(nameof(ObservableChecks));
-        return Task.CompletedTask;
+            OnPropertyChanged(nameof(ObservableChecks));
+            //return Task.CompletedTask;
+        }
+       
     }
 
     /// <summary>
@@ -170,21 +214,30 @@ public partial class ChecklistViewModel : ObservableRecipient
 
 
     [RelayCommand]
-    private void MarkCheckCompleted(ObservableCheck ObservableCheck)
+    private async Task MarkCheckCompleted(ObservableCheck observableCheck)
     {
-        var _index = ObservableChecks.FirstGroupByKey(ObservableCheck.TestType.ToString()).IndexOf(ObservableCheck);
+        /*var _index = ObservableChecks.FirstGroupByKey(ObservableCheck.TestType.ToString()).IndexOf(ObservableCheck);
         //ObservableChecks.FirstGroupByKey(ObservableCheck.TestType.ToString()).ElementAt(_index).CheckCompleted = true;
         
         ObservableChecks.FirstGroupByKey(ObservableCheck.TestType.ToString()).RemoveAt(_index);
         ObservableCheck.CheckCompleted = true;
         ObservableChecks.FirstGroupByKey(ObservableCheck.TestType.ToString()).Insert(_index, ObservableCheck);
 
-        //OnPropertyChanged(nameof(ObservableChecks));
+        //OnPropertyChanged(nameof(ObservableChecks));*/
+
+        //await Task.Run(() => _fileService.Save(OutputFolder, _defaultChecksFileName, ObservableChecks));
+        if(observableCheck.CheckCompleted) {
+            var _index = _checks.IndexOf(observableCheck);
+            _checks.RemoveAt(_index);
+            _checks.Insert(_index, observableCheck);
+            await Task.Run(() => _fileService.Save(OutputFolder, _defaultChecksFileName, _checks));
+        }
+        
     }
 
-    private void ExcelToJson()
+    private void ExcelToJson(string testType)
     {
-        using var stream = File.Open("C:\\Users\\shpaul\\Downloads\\Deloitte_Allianz_IAPT_Checklist_v.1.2.xlsx", FileMode.Open, FileAccess.Read);
+        using var stream = File.Open("C:\\Users\\jsheb\\Downloads\\Deloitte_Allianz_IAPT_Checklist_v.1.2.xlsx", FileMode.Open, FileAccess.Read);
         
         //Had to include to stop the reader from breaking coz not supporting encoding
         System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
@@ -197,7 +250,7 @@ public partial class ChecklistViewModel : ObservableRecipient
         do
         {
 
-            if (reader.Name == "Web Application")
+            if (reader.Name == testType)
             {
                 while (reader.Read())
                 {
@@ -242,11 +295,11 @@ public partial class ChecklistViewModel : ObservableRecipient
         // The result of each spreadsheet is in result.Tables
 
 
-        //var xmloutputFile = File.OpenWrite("C:\\Users\\shpaul\\Downloads\\xmlOutput.txt");
+        //var xmloutputFile = File.OpenWrite("C:\\Users\\jsheb\\Downloads\\xmlOutput.txt");
         //result.WriteXml(xmloutputFile);
 
-        //var jsonoutputFile = File.OpenWrite("C:\\Users\\shpaul\\Downloads\\jsonOutput.txt");
-        File.WriteAllText(@"C:\Users\shpaul\Downloads\jsonOutput.txt", json);
+        //var jsonoutputFile = File.OpenWrite("C:\\Users\\jsheb\\Downloads\\jsonOutput.txt");
+        File.WriteAllText(@"C:\Users\jsheb\Downloads\jsonOutput.txt", json);
     }
 
     
@@ -305,6 +358,7 @@ public partial class ChecklistViewModel : ObservableRecipient
         XLWorkbook wb = new XLWorkbook();
         wb.Worksheets.Add(dt, "Artifact");
         wb.SaveAs(excelFilePath);
+
 
         /*try
         {

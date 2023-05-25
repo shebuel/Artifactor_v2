@@ -46,7 +46,8 @@
                 <Button Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="8" 
                         HorizontalAlignment="Center" Width="500" VerticalAlignment="Center" 
                         Background="{StaticResource SystemControlBackgroundAccentBrush}"
-                        Margin="0,25,0,25">
+                        Margin="0,25,0,25"
+                        Command="{x:Bind ViewModel.ContinueCommand}">
                     Continue from previous save point
                 </Button>
             </Grid>
