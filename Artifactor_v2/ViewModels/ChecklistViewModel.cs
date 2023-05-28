@@ -349,7 +349,7 @@ public partial class ChecklistViewModel : ObservableRecipient
         Worksheet workSheet = wb.Worksheets[0];
 
         workSheet.Name = "CheckList";
-        workSheet.Cells.StandardHeight = 50;
+          
 
         //workSheet.Cells.ImportCustomObjects(_completedChecksList, 0, 0, imp);
 
@@ -359,14 +359,20 @@ public partial class ChecklistViewModel : ObservableRecipient
 
         foreach (var group in ObservableChecks)
         {
-            var groupName = group.Key;
-            workSheet.Cells[_rowIndex, _columnIndex].PutValue(groupName);
+            workSheet.Cells.Merge(_rowIndex, 0, 1, 5);
+            workSheet.Cells[_rowIndex, _columnIndex].PutValue(group.Key);
+            var style = workSheet.Cells[_rowIndex, 0].GetStyle();
+            style.ForegroundColor = System.Drawing.Color.Green;
+            style.Pattern = BackgroundType.Solid;
+            workSheet.Cells[_rowIndex, 0].SetStyle(style);
             _rowIndex++;
             workSheet.Cells[_rowIndex, 0].PutValue("Test ID");
             workSheet.Cells[_rowIndex, 1].PutValue("Test Description");
             workSheet.Cells[_rowIndex, 2].PutValue("Test Status");
             workSheet.Cells[_rowIndex, 3].PutValue("Tester Comments");
             workSheet.Cells[_rowIndex, 4].PutValue("Proof");
+            var range = workSheet.Cells.CreateRange(_rowIndex, 0, 1, 5);
+            range.SetStyle(style);
             _rowIndex++;
             foreach (var item in group.ToList())
             {
