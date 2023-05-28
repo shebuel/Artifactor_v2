@@ -58,13 +58,15 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="50" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <CheckBox IsChecked="{x:Bind CheckCompleted, Mode=TwoWay}" Grid.Column="0" Grid.Row="0" Command="{Binding ElementName=ContentArea, Path=DataContext.MarkCheckCompletedCommand}" CommandParameter="{Binding}"/>
+                    
+                    <CheckBox IsChecked="{x:Bind CheckCompleted, Mode=TwoWay}" Grid.Column="0" Grid.Row="0" Command="{Binding ElementName=ContentArea, Path=DataContext.MarkCheckCompletedCommand}" CommandParameter="{Binding}" Width="50"/>
+                    
                     <TextBlock Padding="10" Text="{x:Bind TestName}" Style="{StaticResource BodyTextBlockStyle}"
                                     VerticalAlignment="Center"
                                     HorizontalAlignment="Stretch"
@@ -72,19 +74,14 @@
                                     Width="400"
                                     Grid.Column="1" Grid.Row="0"/>
 
-                    <RadioButtons x:Name="BackgroundRadioButtons" SelectedIndex="0"  MaxColumns="3"  Width="400" Grid.Column="2" Grid.Row="0" SelectedItem="{x:Bind Status, Mode=TwoWay}" >
-                        <x:String>Pass</x:String>
-                        <x:String>Fail</x:String>
-                        <x:String>Not Applicable</x:String>
-                    </RadioButtons>
+                    <RadioButtons x:Name="BackgroundRadioButtons" MaxColumns="3"  Width="400" Grid.Column="2" Grid.Row="0" SelectedItem="{x:Bind Status, Mode=TwoWay}" ItemsSource="{Binding ElementName=ContentArea, Path=DataContext.StatusItemSource}"/>
 
                     <TextBox PlaceholderText="Enter Comments here" Width="Auto" Margin="20,5,20,0" Grid.Column="3" VerticalAlignment="Center" Grid.Row="0" Text="{x:Bind Comment, Mode=TwoWay}"></TextBox>
 
                     <Button Background="{StaticResource SystemControlBackgroundAccentBrush}" Grid.Column="4" Grid.Row="0" HorizontalAlignment="Center" Command="{Binding ElementName=ContentArea, Path=DataContext.PasteCommand}" CommandParameter="{Binding}">Paste</Button>
 
                     <Border BorderThickness="1" Grid.Row="1" Grid.ColumnSpan="4" BorderBrush="{ThemeResource ControlStrongStrokeColorDefaultBrush}"  Margin="10,10,10,10" CornerRadius="8">
-                        <ListBox x:Name="FilePathTextBlock" ItemsSource="{x:Bind ProofFilePath}">
-                            </ListBox>
+                        <ListBox x:Name="FilePathTextBlock" ItemsSource="{x:Bind ProofFilePath}" />
                     </Border>
                 </Grid>
             </DataTemplate>
@@ -126,7 +123,7 @@
                         </GroupStyle>
                     </ListView.GroupStyle>
 
-                    <!--Code to change color when check marked complete -->
+                    <!--Code to change color when check marked complete (Removed feature)-->
                     
 
                     <ListView.ItemsPanel>

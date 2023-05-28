@@ -13,6 +13,16 @@
     <Grid>
         <StackPanel
             x:Name="ContentArea">
+
+            <StackPanel Margin="{StaticResource SmallTopBottomMargin}">
+                <TextBlock Text="CheckList Path" Style="{ThemeResource SubtitleTextBlockStyle}"/>
+                <StackPanel Margin="{StaticResource SmallTopBottomMargin}">
+                    <TextBox Text="{x:Bind ViewModel.CheckListPath, Mode=TwoWay}"></TextBox>
+                    <Button Margin="{StaticResource XSmallTopMargin}">Choose Path</Button>
+                </StackPanel>
+            </StackPanel>
+            
+           
             <TextBlock x:Uid="Settings_Personalization" Style="{ThemeResource SubtitleTextBlockStyle}" />
             <StackPanel Margin="{StaticResource SmallTopBottomMargin}">
                 <TextBlock x:Uid="Settings_Theme" />
@@ -50,6 +60,7 @@
                     </RadioButton>
                 </StackPanel>
             </StackPanel>
+
 
             <TextBlock x:Uid="Settings_About" Style="{ThemeResource SubtitleTextBlockStyle}" />
 

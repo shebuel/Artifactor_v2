@@ -9,12 +9,13 @@ using Windows.Storage.Pickers;
 using Windows.Storage.Streams;
 using Windows.Storage;
 using System.Data;
-using Excel = Microsoft.Office.Interop.Excel;
-using ClosedXML.Excel;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml;
 using CommunityToolkit.Mvvm.Messaging;
 using Artifactor_v2.Core.Contracts.Services;
+using Aspose.Cells;
+using Style = Microsoft.UI.Xaml.Style;
+using Aspose.Cells.Drawing;
 
 namespace Artifactor_v2.ViewModels;
 
@@ -22,9 +23,14 @@ public partial class ChecklistViewModel : ObservableRecipient
 {
     public ChecklistViewModel(IFileService fileService)
     {
-        OutputFolder = "C:\\Users\\jsheb\\Documents\\CheckOutput\\";
+        //OutputFolder = "C:\\Users\\jsheb\\Documents\\CheckOutput\\";
         _fileService = fileService;
-
+        StatusItemSource = new()
+        {
+            "Pass",
+            "Fail",
+            "Not Applicable"
+        };
 
     }
 
@@ -32,15 +38,18 @@ public partial class ChecklistViewModel : ObservableRecipient
     /// Gets the current collection of checks
     /// </summary>
     public ObservableGroupedCollection<string, ObservableCheck> ObservableChecks = new();
+
     private List<ObservableCheck>? _checks;
     private ChecksQueryResponse? ChecksQuery;
-    private readonly string OutputFolder;
     private readonly IFileService _fileService;
     private const string _defaultChecksFileName = "checklist.json";
     private TestDetails? TestDetailsFromMain {
         get;  set;
     }
-
+    public List<string> StatusItemSource
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Load the checks to dispaly
@@ -80,11 +89,8 @@ public partial class ChecklistViewModel : ObservableRecipient
         }
         else
         {
-            _checks = new()
-            {
-                check1,
-                check2
-            };
+
+            _checks = new();
 
             ExcelToJson(TestDetailsFromMain.ApplicationType);
             ChecksQuery = new(_checks);
@@ -186,32 +192,6 @@ public partial class ChecklistViewModel : ObservableRecipient
         //OnPropertyChanged(nameof(ObservableChecks));
     }
 
-    
-    private readonly ObservableCheck check1 = new()
-    {
-        TestId = "testID",
-        TestName = "testName",
-        TestDescription = "testDescription",
-        TestType = "testType",
-        CheckCompleted = true,
-        ProofFilePath = new List<string> { "filepath1", "filepath2" },
-        Tags = new List<string> { "tag1", "tag2" },
-        Status = "Pass",
-        Comment = ""
-    };
-    private readonly ObservableCheck check2 = new()
-    {
-        TestId = "testID1",
-        TestName = "testName1",
-        TestDescription = "testDescription1",
-        TestType = "testType",
-        CheckCompleted = true,
-        ProofFilePath = new List<string> { "filepath1", "filepath2" },
-        Tags = new List<string> { "tag1", "tag2" },
-        Status = "Pass",
-        Comment = ""
-    };
-
 
     [RelayCommand]
     private async Task MarkCheckCompleted(ObservableCheck observableCheck)
@@ -230,7 +210,7 @@ public partial class ChecklistViewModel : ObservableRecipient
             var _index = _checks.IndexOf(observableCheck);
             _checks.RemoveAt(_index);
             _checks.Insert(_index, observableCheck);
-            await Task.Run(() => _fileService.Save(OutputFolder, _defaultChecksFileName, _checks));
+            await Task.Run(() => _fileService.Save(TestDetailsFromMain.OutputFolderPath, _defaultChecksFileName, _checks));
         }
         
     }
@@ -306,12 +286,13 @@ public partial class ChecklistViewModel : ObservableRecipient
 
 
     [RelayCommand]
-    private void Complete()
+    private async void Complete()
     {
         List<ObservableCheck> _checksList = new List<ObservableCheck>();
         List<ObservableCheck> _completedChecksList = new List<ObservableCheck>();
-        var excelFilePath = OutputFolder + "Artifact_Output.xlsx";
-        
+        var excelFilePath = TestDetailsFromMain.OutputFolderPath + "Artifact_Output.xlsx";
+        var excelFilePathInterop = TestDetailsFromMain.OutputFolderPath + "\\Artifact_Output_interop.xlsx";
+
         foreach (var group in ObservableChecks)
         {
             _checksList.AddRange(group.ToList());
@@ -327,9 +308,9 @@ public partial class ChecklistViewModel : ObservableRecipient
             }
         }
 
-        var _completedChecksListFlat = new List<ChecksFlatList>();
+        //var _completedChecksListFlat = new List<ChecksFlatList>();
 
-        foreach (var check in _completedChecksList)
+        /*foreach (var check in _completedChecksList)
         {
             if (check.ProofFilePath != null)
             {
@@ -349,20 +330,96 @@ public partial class ChecklistViewModel : ObservableRecipient
                 _completedChecksListFlat.Add(_checkFlat);
 
             }
+        }*/
+
+        //var json = JsonConvert.SerializeObject(_completedChecksListFlat, Formatting.Indented);
+
+        //DataTable dt = (DataTable)JsonConvert.DeserializeObject(json, typeof(DataTable));
+
+        /*XLWorkbook wb = new XLWorkbook();
+        wb.Worksheets.Add(dt, "Artifact");
+        wb.SaveAs(excelFilePath);*/
+
+        //ExcelEngine excelEngine = new ExcelEngine();
+
+        // Instantiate a Workbook object that represents Excel file.
+        Workbook wb = new Workbook();
+
+        // When you create a new workbook, a default "Sheet1" is added to the workbook.
+        Worksheet workSheet = wb.Worksheets[0];
+
+        workSheet.Name = "CheckList";
+        workSheet.Cells.StandardHeight = 50;
+
+        //workSheet.Cells.ImportCustomObjects(_completedChecksList, 0, 0, imp);
+
+        var _rowIndex = 0;
+        var _columnIndex = 0;
+        var _oleindex = 0;
+
+        foreach (var group in ObservableChecks)
+        {
+            var groupName = group.Key;
+            workSheet.Cells[_rowIndex, _columnIndex].PutValue(groupName);
+            _rowIndex++;
+            workSheet.Cells[_rowIndex, 0].PutValue("Test ID");
+            workSheet.Cells[_rowIndex, 1].PutValue("Test Description");
+            workSheet.Cells[_rowIndex, 2].PutValue("Test Status");
+            workSheet.Cells[_rowIndex, 3].PutValue("Tester Comments");
+            workSheet.Cells[_rowIndex, 4].PutValue("Proof");
+            _rowIndex++;
+            foreach (var item in group.ToList())
+            {
+                if (item.CheckCompleted)
+                {
+                    workSheet.Cells[_rowIndex, 0].PutValue(item.TestId);
+                    workSheet.Cells[_rowIndex, 1].PutValue(item.TestDescription);
+                    workSheet.Cells[_rowIndex, 2].PutValue(item.Status);
+                    workSheet.Cells[_rowIndex, 3].PutValue(item.Comment);
+                    if(item.ProofFilePath != null)
+                    {
+                        foreach(var filePath in item.ProofFilePath)
+                        {
+                            if (File.Exists(filePath))
+                            {
+                                FileStream fs = File.OpenRead(filePath);
+                                byte[] imageData = new Byte[fs.Length];
+                                fs.Read(imageData, 0, imageData.Length);
+                                fs.Close();
+
+                                workSheet.OleObjects.Add(_rowIndex, 4, 30, 30, imageData);
+                                workSheet.OleObjects[_oleindex].ObjectData = imageData;
+                                workSheet.OleObjects[_oleindex].FileFormatType = FileFormatType.Ole10Native;
+                                workSheet.OleObjects[_oleindex].ObjectSourceFullName = filePath;
+                                workSheet.OleObjects[_oleindex].ProgID = "Packager Shell Object";
+                                workSheet.OleObjects[_oleindex].AutoLoad = true;
+
+                                Guid gu = new Guid("0003000c-0000-0000-c000-000000000046");
+                                workSheet.OleObjects[_oleindex].ClassIdentifier = gu.ToByteArray();
+                                //workSheet.OleObjects[_oleindex].ProgID = "Packager Shell Object";
+                                //workSheet.OleObjects[_oleindex].SetEmbeddedObject(false, imageData, filePath, true, item.TestId);
+                                _oleindex++;
+                            }
+                            
+                        }
+                        
+                    }
+                    
+                    _rowIndex++;
+                }
+            }
+            _rowIndex += 3;
+
         }
 
-        var json = JsonConvert.SerializeObject(_completedChecksListFlat, Formatting.Indented);
+        wb.Worksheets[0].AutoFitColumns();
 
-        DataTable dt = (DataTable)JsonConvert.DeserializeObject(json, typeof(DataTable));
-
-        XLWorkbook wb = new XLWorkbook();
-        wb.Worksheets.Add(dt, "Artifact");
-        wb.SaveAs(excelFilePath);
-
+        // Save the Excel file.
+        wb.Save(excelFilePathInterop);
 
         /*try
         {
-            if (tbl == null || tbl.Columns.Count == 0)
+            if (dt == null || dt.Columns.Count == 0)
                 throw new Exception("ExportToExcel: Null or empty input table!\n");
 
             // load excel, and create a new workbook
@@ -373,27 +430,27 @@ public partial class ChecklistViewModel : ObservableRecipient
             Excel._Worksheet workSheet = (Excel._Worksheet)excelApp.ActiveSheet;
 
             // column headings
-            for (var i = 0; i < tbl.Columns.Count; i++)
+            for (var i = 0; i < dt.Columns.Count; i++)
             {
-                workSheet.Cells[1, i + 1] = tbl.Columns[i].ColumnName;
+                workSheet.Cells[1, i + 1] = dt.Columns[i].ColumnName;
             }
 
             // rows
-            for (var i = 0; i < tbl.Rows.Count; i++)
+            for (var i = 0; i < dt.Rows.Count; i++)
             {
                 // to do: format datetime values before printing
-                for (var j = 0; j < tbl.Columns.Count; j++)
+                for (var j = 0; j < dt.Columns.Count; j++)
                 {
-                    workSheet.Cells[i + 2, j + 1] = tbl.Rows[i][j];
+                    workSheet.Cells[i + 2, j + 1] = dt.Rows[i][j];
                 }
             }
 
             // check file path
-            if (!string.IsNullOrEmpty(excelFilePath))
+            if (!string.IsNullOrEmpty(excelFilePathInterop))
             {
                 try
                 {
-                    workSheet.SaveAs(excelFilePath);
+                    workSheet.SaveAs(excelFilePathInterop);
                     excelApp.Quit();
                     Console.WriteLine("Excel file saved!");
                 }
@@ -412,8 +469,20 @@ public partial class ChecklistViewModel : ObservableRecipient
         {
             throw new Exception("ExportToExcel: \n" + ex.Message);
         }*/
+        ContentDialog dailog = new ContentDialog()
+        {
+            XamlRoot = App.MainWindow.Content.XamlRoot,
+            Title = "Artifact Created",
+            Content = "Artifact Document created in following path: " + TestDetailsFromMain.OutputFolderPath,
+            CloseButtonText = "OK",
+            Style = App.Current.Resources["DefaultContentDialogStyle"] as Style,
+            DefaultButton = ContentDialogButton.Close,
+            RequestedTheme = ElementTheme.Dark
+        };
+        await dailog.ShowAsync();
 
         Console.WriteLine(_count.ToString());
+
 
 
         

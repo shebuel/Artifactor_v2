@@ -3,7 +3,7 @@ using System.Windows.Input;
 
 using Artifactor_v2.Contracts.Services;
 using Artifactor_v2.Helpers;
-
+using Artifactor_v2.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -13,11 +13,15 @@ using Windows.ApplicationModel;
 
 namespace Artifactor_v2.ViewModels;
 
-public class SettingsViewModel : ObservableRecipient
+public partial class SettingsViewModel : ObservableRecipient
 {
     private readonly IThemeSelectorService _themeSelectorService;
     private ElementTheme _elementTheme;
     private string _versionDescription;
+    //private readonly LocalSettingsService _localSettingsService;
+
+    [ObservableProperty]
+    private string _checkListPath;
 
     public ElementTheme ElementTheme
     {
@@ -31,6 +35,8 @@ public class SettingsViewModel : ObservableRecipient
         set => SetProperty(ref _versionDescription, value);
     }
 
+
+
     public ICommand SwitchThemeCommand
     {
         get;
@@ -39,8 +45,10 @@ public class SettingsViewModel : ObservableRecipient
     public SettingsViewModel(IThemeSelectorService themeSelectorService)
     {
         _themeSelectorService = themeSelectorService;
+        //_localSettingsService = localSettingsService;
         _elementTheme = _themeSelectorService.Theme;
         _versionDescription = GetVersionDescription();
+        _checkListPath = "C:\\Users\\jsheb\\Downloads\\Deloitte_Allianz_IAPT_Checklist_v.1.2.xlsx";
 
         SwitchThemeCommand = new RelayCommand<ElementTheme>(
             async (param) =>
@@ -60,7 +68,7 @@ public class SettingsViewModel : ObservableRecipient
         if (RuntimeHelper.IsMSIX)
         {
             var packageVersion = Package.Current.Id.Version;
-
+             
             version = new(packageVersion.Major, packageVersion.Minor, packageVersion.Build, packageVersion.Revision);
         }
         else
@@ -70,4 +78,16 @@ public class SettingsViewModel : ObservableRecipient
 
         return $"{"AppDisplayName".GetLocalized()} - {version.Major}.{version.Minor}.{version.Build}.{version.Revision}";
     }
+
+    /*private async Task<string> GetCheckListPathAsync()
+    {
+        //var checkListPathLocal = await Task.Run(() => _localSettingsService.ReadSettingAsync<string>("CheckListPath"));
+       
+        if (checkListPathLocal == null)
+        {
+            return "No path found";
+        }
+        await Task.CompletedTask;
+        return checkListPathLocal;
+    }*/
 }
