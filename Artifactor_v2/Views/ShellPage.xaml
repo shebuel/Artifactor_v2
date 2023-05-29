@@ -54,7 +54,7 @@
                         <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE8BC;"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem x:Uid="Shell_About" helpers:NavigationHelper.NavigateTo="Artifactor_v2.ViewModels.AboutViewModel">
+                <NavigationViewItem x:Uid="Shell_About" helpers:NavigationHelper.NavigateTo="Artifactor_v2.ViewModels.AboutViewModel" IsEnabled="False">
                     <NavigationViewItem.Icon>
                         <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xF167;"/>
                     </NavigationViewItem.Icon>

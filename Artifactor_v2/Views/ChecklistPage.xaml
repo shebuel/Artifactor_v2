@@ -90,18 +90,21 @@
         <!--Filters-->
         <Grid VerticalAlignment="Top" HorizontalAlignment="Stretch" Margin="0,0,0,100">
             <Grid.RowDefinitions>
-                <RowDefinition Height="*" />
-                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="100"/>
             </Grid.ColumnDefinitions>
             <TextBlock Text="Filters:" Grid.Column="0" Grid.Row="0" Style="{ThemeResource BodyStrongTextBlockStyle}" Margin="0,10,0,20"/>
             <ToggleSwitch Header="Category A" IsOn="True" Grid.Row="1" Grid.Column="0"/>
             <ToggleSwitch Header="Category B" IsOn="True" Grid.Row="1" Grid.Column="1"/>
             <ToggleSwitch Header="Category C" IsOn="True" Grid.Row="1" Grid.Column="2"/>
+
+            <Button Content="Save" Grid.Column="3" Grid.Row="0" HorizontalAlignment="Stretch"/>
         </Grid>
         
         <!--  Checks view  -->
@@ -124,13 +127,7 @@
                     </ListView.GroupStyle>
 
                     <!--Code to change color when check marked complete (Removed feature)-->
-                    
 
-                    <ListView.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <ItemsStackPanel ItemsUpdatingScrollMode="KeepScrollOffset"/>
-                        </ItemsPanelTemplate>
-                    </ListView.ItemsPanel>
                 </ListView>
             </SemanticZoom.ZoomedInView>
             <SemanticZoom.ZoomedOutView>
