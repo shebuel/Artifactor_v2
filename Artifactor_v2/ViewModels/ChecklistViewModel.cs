@@ -8,22 +8,19 @@ using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage.Pickers;
 using Windows.Storage.Streams;
 using Windows.Storage;
-using System.Data;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml;
 using CommunityToolkit.Mvvm.Messaging;
 using Artifactor_v2.Core.Contracts.Services;
 using Aspose.Cells;
 using Style = Microsoft.UI.Xaml.Style;
-using Aspose.Cells.Drawing;
-
 namespace Artifactor_v2.ViewModels;
 
 public partial class ChecklistViewModel : ObservableRecipient
 {
     public ChecklistViewModel(IFileService fileService)
     {
-        //OutputFolder = "C:\\Users\\jsheb\\Documents\\CheckOutput\\";
+        //OutputFolder = "C:\\Users\\shpaul\\Documents\\CheckOutput\\";
         _fileService = fileService;
         StatusItemSource = new()
         {
@@ -31,7 +28,7 @@ public partial class ChecklistViewModel : ObservableRecipient
             "Fail",
             "Not Applicable"
         };
-
+        Loadchecklist();
     }
 
     /// <summary>
@@ -40,11 +37,14 @@ public partial class ChecklistViewModel : ObservableRecipient
     /// 
 
     public ObservableGroupedCollection<string, ObservableCheck> ObservableChecks = new();
-    public ObservableGroupedCollection<string, ObservableCheck> ObservableChecksMaster = new();
-    
+    //public ObservableGroupedCollection<string, ObservableCheck> ObservableChecksMaster = new();
+
+    ApplicationDataContainer localSettings = ApplicationData.Current.LocalSettings;
+
     private List<ObservableCheck>? _checks;
     private ChecksQueryResponse? ChecksQuery;
     private readonly IFileService _fileService;
+    private string checklistPath;
     private const string _defaultChecksFileName = "checklist.json";
     private TestDetails? TestDetailsFromMain {
         get;  set;
@@ -95,7 +95,7 @@ public partial class ChecklistViewModel : ObservableRecipient
                ChecksQuery.Checks
                .GroupBy(static c => c.TestType));
 
-           ObservableChecksMaster = ObservableChecks;
+           //ObservableChecksMaster = ObservableChecks;
            OnPropertyChanged(nameof(ObservableChecks));
         }
         else
@@ -111,7 +111,7 @@ public partial class ChecklistViewModel : ObservableRecipient
                 ChecksQuery.Checks
                 .GroupBy(static c => c.TestType));
 
-            ObservableChecksMaster = ObservableChecks;
+            //ObservableChecksMaster = ObservableChecks;
 
             OnPropertyChanged(nameof(ObservableChecks));
             //return Task.CompletedTask;
@@ -170,6 +170,7 @@ public partial class ChecklistViewModel : ObservableRecipient
                     using var stream = await storageFile.OpenAsync(FileAccessMode.ReadWrite);
                     await imageStream.AsStreamForRead().CopyToAsync(stream.AsStreamForWrite());
 
+                    //ObservableChecks.FirstGroupByKey(checkPaste.TestType.ToString())[_index].ProofFilePath.Add(storageFile.Path);
 
                     ObservableChecks.FirstGroupByKey(checkPaste.TestType.ToString()).RemoveAt(_index);
                     checkPaste.ProofFilePath.Add(storageFile.Path);
@@ -204,6 +205,7 @@ public partial class ChecklistViewModel : ObservableRecipient
         //OnPropertyChanged(nameof(ObservableChecks));
     }
 
+    
 
     [RelayCommand]
     private async Task MarkCheckCompleted(ObservableCheck observableCheck)
@@ -231,7 +233,7 @@ public partial class ChecklistViewModel : ObservableRecipient
     private async Task Save()
     {
         var _checksSave = new List<ObservableCheck>();
-        foreach ( var group in ObservableChecksMaster)
+        foreach ( var group in ObservableChecks)
         {
             foreach (var check in group)
             {
@@ -239,7 +241,6 @@ public partial class ChecklistViewModel : ObservableRecipient
             }
         }
         await Task.Run(() => _fileService.Save(TestDetailsFromMain.OutputFolderPath, _defaultChecksFileName, _checksSave));
-
     }
 
 
@@ -284,8 +285,17 @@ public partial class ChecklistViewModel : ObservableRecipient
         var _columnOffsetGlobal = 0;
         var _oleindex = 0;
 
+        FileStream fs;
+
         //Get Image Data
-        FileStream fs = File.OpenRead("C:\\Users\\jsheb\\source\\repos\\Artifactor_v2\\Artifactor_v2\\Assets\\scroll-icon.png");
+        if(File.Exists(Windows.ApplicationModel.Package.Current.InstalledPath + "\\Assets\\scroll-icon.png"))
+        {
+            fs = File.OpenRead(Windows.ApplicationModel.Package.Current.InstalledPath + "\\Assets\\scroll-icon.png");
+        }
+        else
+        {
+            fs = File.OpenRead("C:\\Users\\shpaul\\Documents\\Artifactor_v2\\Artifactor_v2\\Assets\\scroll-icon.png");
+        }
         byte[] imageData = new Byte[fs.Length];
         fs.Read(imageData, 0, imageData.Length);
         fs.Close();
@@ -423,24 +433,12 @@ public partial class ChecklistViewModel : ObservableRecipient
         await dialogSuccess.ShowAsync();
 
         Console.WriteLine(_count.ToString());
-
-
-
-        
-        /*var contentDialog = new ContentDialog
-        {
-            Title = "Finish",
-            Content = "Please fill in all the checks",
-            PrimaryButtonText = "Ok",
-            CloseButtonText = "Cancel"
-        };
-        _ = await contentDialog.ShowAsync();*/
-
     }
+
 
     private void ExcelToJson(string testType)
     {
-        using var stream = File.Open("C:\\Users\\jsheb\\Downloads\\Deloitte_Allianz_IAPT_Checklist_v.1.2.xlsx", FileMode.Open, FileAccess.Read);
+        using var stream = File.Open(checklistPath, FileMode.Open, FileAccess.Read);
 
         //Had to include to stop the reader from breaking coz not supporting encoding
         System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
@@ -485,24 +483,48 @@ public partial class ChecklistViewModel : ObservableRecipient
                 }
             }
         } while (reader.NextResult());
+    }
 
 
-        // 2. Use the AsDataSet extension method
-        var result = reader.AsDataSet().Tables["Web Application"];
-
-
-        //Serialize the Checks list object to json string
-        var json = JsonConvert.SerializeObject(_checks, Formatting.Indented);
-
-
-        // The result of each spreadsheet is in result.Tables
-
-
-        //var xmloutputFile = File.OpenWrite("C:\\Users\\jsheb\\Downloads\\xmlOutput.txt");
-        //result.WriteXml(xmloutputFile);
-
-        //var jsonoutputFile = File.OpenWrite("C:\\Users\\jsheb\\Downloads\\jsonOutput.txt");
-        File.WriteAllText(@"C:\Users\jsheb\Downloads\jsonOutput.txt", json);
+    //Load the checklist file path from localsettings and check if the file exists
+    private async void Loadchecklist()
+    {
+        try
+        {
+            var checklistPathLocal = localSettings.Containers["checklist"].Values["checklistPath"] as string;
+            if (File.Exists(checklistPathLocal))
+            {
+                checklistPath = checklistPathLocal;
+            }
+            else
+            {
+                ContentDialog dialogChecklistError1 = new ContentDialog()
+                {
+                    XamlRoot = App.MainWindow.Content.XamlRoot,
+                    Title = "Unable to read CheckList Excel",
+                    Content = "Unable to read checklist file at location: " + checklistPath + ". Please head to settings and insert the file again.",
+                    CloseButtonText = "OK",
+                    Style = App.Current.Resources["DefaultContentDialogStyle"] as Style,
+                    DefaultButton = ContentDialogButton.Close,
+                    RequestedTheme = ElementTheme.Dark
+                };
+                await dialogChecklistError1.ShowAsync();
+            }
+        }
+        catch (Exception)
+        {
+            ContentDialog dialogChecklistError = new ContentDialog()
+            {
+                XamlRoot = App.MainWindow.Content.XamlRoot,
+                Title = "Unable to read CheckList Excel",
+                Content = "Unable to read checklist file. Please head to settings and insert location of file",
+                CloseButtonText = "OK",
+                Style = App.Current.Resources["DefaultContentDialogStyle"] as Style,
+                DefaultButton = ContentDialogButton.Close,
+                RequestedTheme = ElementTheme.Dark
+            };
+            await dialogChecklistError.ShowAsync();
+        }
     }
 }
 

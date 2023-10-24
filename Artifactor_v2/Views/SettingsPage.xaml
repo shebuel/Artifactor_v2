@@ -15,10 +15,10 @@
             x:Name="ContentArea">
 
             <StackPanel Margin="{StaticResource SmallTopBottomMargin}">
-                <TextBlock Text="CheckList Path" Style="{ThemeResource SubtitleTextBlockStyle}"/>
+                <TextBlock Text="CheckList Path" Style="{ThemeResource SubtitleTextBlockStyle}" />
                 <StackPanel Margin="{StaticResource SmallTopBottomMargin}">
-                    <TextBox Text="{x:Bind ViewModel.CheckListPath, Mode=TwoWay}"></TextBox>
-                    <Button Margin="{StaticResource XSmallTopMargin}">Choose Path</Button>
+                    <TextBox Text="{x:Bind ViewModel.CheckListPath, Mode=TwoWay}" IsEnabled="False"></TextBox>
+                    <Button Margin="{StaticResource XSmallTopMargin}" Command="{x:Bind ViewModel.GetCheckListPathCommand}">Choose Path</Button>
                 </StackPanel>
             </StackPanel>
             

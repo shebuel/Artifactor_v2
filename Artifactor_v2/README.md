@@ -25,3 +25,5 @@ See [releases](https://github.com/microsoft/TemplateStudio/releases) and [milest
 ## Feedback
 
 Bugs and feature requests should be filed at https://aka.ms/templatestudio.
+
+ <Border BorderThickness="1" Grid.Row="1" Grid.ColumnSpan="4" BorderBrush="{ThemeResource ControlStrongStrokeColorDefaultBrush}"  Margin="10,10,10,10" CornerRadius="8" Height="Auto">

@@ -44,12 +44,12 @@
                 TODO: Update item icons by updating FontIcon.Glyph properties.
                 https://docs.microsoft.com/windows/apps/design/style/segoe-fluent-icons-font#icon-list
                 -->
-                <NavigationViewItem x:Uid="Shell_Main" helpers:NavigationHelper.NavigateTo="Artifactor_v2.ViewModels.MainViewModel">
+                <NavigationViewItem x:Uid="Shell_Main" helpers:NavigationHelper.NavigateTo="Artifactor_v2.ViewModels.MainViewModel" IsEnabled="{x:Bind ViewModel.IsMainEnabled}">
                     <NavigationViewItem.Icon>
                         <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE80F;"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem x:Uid="Shell_Checklist" helpers:NavigationHelper.NavigateTo="Artifactor_v2.ViewModels.ChecklistViewModel">
+                <NavigationViewItem x:Uid="Shell_Checklist" helpers:NavigationHelper.NavigateTo="Artifactor_v2.ViewModels.ChecklistViewModel" IsEnabled="{x:Bind ViewModel.IsChecklistEnabled}">
                     <NavigationViewItem.Icon>
                         <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE8BC;"/>
                     </NavigationViewItem.Icon>

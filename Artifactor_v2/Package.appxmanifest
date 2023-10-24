@@ -12,8 +12,8 @@
 
   <Identity
     Name="630256d9-3ecf-458a-a8ba-12ac504c3ca0"
-    Publisher="CN=jsheb"
-    Version="1.0.0.0" />
+    Publisher="CN=shpaul"
+    Version="1.1.3.0" />
     
   <mp:PhoneIdentity PhoneProductId="630256d9-3ecf-458a-a8ba-12ac504c3ca0" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
     

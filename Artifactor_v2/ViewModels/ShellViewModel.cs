@@ -7,10 +7,17 @@ using Microsoft.UI.Xaml.Navigation;
 
 namespace Artifactor_v2.ViewModels;
 
-public class ShellViewModel : ObservableRecipient
+public partial class ShellViewModel : ObservableRecipient
 {
     private bool _isBackEnabled;
     private object? _selected;
+
+    [ObservableProperty]
+    private bool _isMainEnabled;
+    [ObservableProperty]
+    private bool _isChecklistEnabled;
+    [ObservableProperty]
+    private bool _isSettingsEnabled;
 
     public INavigationService NavigationService
     {
@@ -39,6 +46,9 @@ public class ShellViewModel : ObservableRecipient
         NavigationService = navigationService;
         NavigationService.Navigated += OnNavigated;
         NavigationViewService = navigationViewService;
+        IsMainEnabled = true;
+        IsChecklistEnabled = false;
+        IsSettingsEnabled = true;
     }
 
     private void OnNavigated(object sender, NavigationEventArgs e)
@@ -53,7 +63,11 @@ public class ShellViewModel : ObservableRecipient
 
         var selectedItem = NavigationViewService.GetSelectedItem(e.SourcePageType);
         if (selectedItem != null)
-        {
+        {   
+            if(selectedItem.GetType() == typeof(ChecklistPage)) 
+            {
+                IsMainEnabled = false;
+            }
             Selected = selectedItem;
         }
     }

@@ -52,10 +52,11 @@
             
             <!-- Template for check item-->
             <DataTemplate x:Key="CheckListViewTemplate" x:DataType="checks:ObservableCheck" >
-                <Grid ContextFlyout="{StaticResource ContactMenuFlyout}">
+                <Grid ContextFlyout="{StaticResource ContactMenuFlyout}" Margin="0,5,0,5">
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
-                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="50" />
@@ -80,15 +81,17 @@
 
                     <Button Background="{StaticResource SystemControlBackgroundAccentBrush}" Grid.Column="4" Grid.Row="0" HorizontalAlignment="Center" Command="{Binding ElementName=ContentArea, Path=DataContext.PasteCommand}" CommandParameter="{Binding}">Paste</Button>
 
-                    <Border BorderThickness="1" Grid.Row="1" Grid.ColumnSpan="4" BorderBrush="{ThemeResource ControlStrongStrokeColorDefaultBrush}"  Margin="10,10,10,10" CornerRadius="8">
-                        <ListBox x:Name="FilePathTextBlock" ItemsSource="{x:Bind ProofFilePath}" />
-                    </Border>
+                    <ListView x:Name="FilePathTextBlock" ItemsSource="{x:Bind ProofFilePath}" Height="Auto" Grid.Row="1" Grid.ColumnSpan="4" />
+
+                    <MenuFlyoutSeparator Grid.Row="2" Grid.ColumnSpan="4"/>
                 </Grid>
             </DataTemplate>
         </Grid.Resources>
         
         <!--Filters-->
+
         <Grid VerticalAlignment="Top" HorizontalAlignment="Stretch" Margin="0,0,0,100">
+            <!--
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -103,12 +106,14 @@
             <ToggleSwitch Header="Category A" IsOn="True" Grid.Row="1" Grid.Column="0"/>
             <ToggleSwitch Header="Category B" IsOn="True" Grid.Row="1" Grid.Column="1"/>
             <ToggleSwitch Header="Category C" IsOn="True" Grid.Row="1" Grid.Column="2"/>
-
-            <Button Content="Save" Grid.Column="3" Grid.Row="0" HorizontalAlignment="Stretch"/>
+            -->
+            <Button Content="Save" HorizontalAlignment="Right" Width="500" Command="{x:Bind ViewModel.SaveCommand}" Background="{StaticResource SystemControlBackgroundAccentBrush}"/>
         </Grid>
+
+        
         
         <!--  Checks view  -->
-        <SemanticZoom Margin="0,150,0,0">
+        <SemanticZoom Margin="0,50,0,50">
             <SemanticZoom.ZoomedInView>
                 <ListView ItemTemplate="{StaticResource CheckListViewTemplate}"
                   ItemsSource="{x:Bind CheckViewSource.View, Mode=OneWay}"
